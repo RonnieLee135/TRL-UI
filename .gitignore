@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Runtime data
+webui/runs/
+
+# Tooling / editor
+.codeartsdoer/
+.merkle-snapshot.json
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRL-UI · 强化学习训练控制台</title>
+<meta name="description" content="分析 TRL 支持的强化学习算法与入参，并在界面上配置、校验、启动训练任务。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111827'/%3E%3Cpath d='M9 21.5 15.2 10l2.6 7 2.3-4 3 8.5' fill='none' stroke='%23fff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主内容</a>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#/catalog" aria-label="TRL-UI 首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="18" height="18"><path d="M6 24 15 6l4.5 12 3.5-6 4 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">TRL-UI</span>
+    </a>
+    <nav class="tabs" aria-label="主导航">
+      <a href="#/catalog" data-tab="catalog">算法总览</a>
+      <a href="#/new" data-tab="new">新建训练</a>
+      <a href="#/jobs" data-tab="jobs">任务<span class="pill-count" id="job-count" hidden></span></a>
+      <a href="#/env" data-tab="env">环境</a>
+    </nav>
+    <div class="nav-tools">
+      <span class="mode-chip" id="mode-chip" title="当前机器的运行模式">检测中…</span>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="切换深色模式" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="icon-moon" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><g class="icon-sun" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="none"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></g></svg>
+      </button>
+      <button class="icon-btn nav-burger" id="burger" type="button" aria-label="展开导航" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ---------------------------------------------------------------- catalog -->
+  <section class="view" id="view-catalog" hidden>
+    <div class="hero">
+      <p class="eyebrow" id="catalog-eyebrow">TRL</p>
+      <h1>强化学习算法与入参，一处看清</h1>
+      <p class="lede">
+        参数来自 TRL 源码的 dataclass 声明，分组来自它自己的 docstring 段落。
+        挑一个算法，填表、校验、生成命令，再在这里启动。
+      </p>
+      <div class="stats" id="catalog-stats"></div>
+    </div>
+
+    <section class="panel">
+      <h2 class="section-title">训练流程抽象</h2>
+      <p class="section-sub">所有 trainer 共用的八阶段管线；换算法只替换其中几段。</p>
+      <div class="pipeline" id="pipeline"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="section-title">算法</h2>
+        <div class="filter-row" role="group" aria-label="按家族筛选">
+          <div class="pills" id="family-filter"></div>
+          <label class="search">
+            <span class="sr-only">搜索算法</span>
+            <input type="search" id="algo-search" placeholder="搜索算法、类名、参数…" autocomplete="off">
+          </label>
+        </div>
+      </div>
+      <div id="algo-grid" class="card-grid" aria-live="polite"></div>
+    </section>
+  </section>
+
+  <!-- -------------------------------------------------------------------- new -->
+  <section class="view" id="view-new" hidden>
+    <div class="wizard">
+      <div class="wizard-main">
+        <ol class="steps" id="steps"></ol>
+        <div class="step-body" id="step-body" aria-live="polite">
+          <div class="skeleton" style="height:28px;width:40%"></div>
+          <div class="skeleton" style="height:14px;margin-top:12px"></div>
+          <div class="skeleton" style="height:14px;margin-top:8px;width:70%"></div>
+        </div>
+      </div>
+      <aside class="wizard-side" aria-label="命令预览与校验" id="wizard-side"></aside>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------- jobs -->
+  <section class="view" id="view-jobs" hidden>
+    <div class="jobs-layout">
+      <div class="job-list-wrap">
+        <div class="panel-head">
+          <h2 class="section-title">任务</h2>
+          <button class="btn sm" id="refresh-jobs" type="button">刷新</button>
+        </div>
+        <div id="job-list" class="job-list" aria-live="polite"></div>
+      </div>
+      <div class="job-detail" id="job-detail">
+        <div class="empty-state">
+          <p class="eyebrow">任务</p>
+          <h2>还没有选中任务</h2>
+          <p class="muted">左边选一个任务查看命令、日志与曲线；或去「新建训练」创建一个。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------------- env -->
+  <section class="view" id="view-env" hidden>
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="section-title">运行环境</h2>
+        <button class="btn sm" id="refresh-env" type="button">重新探测</button>
+      </div>
+      <div id="env-body"></div>
+    </div>
+  </section>
+</main>
+
+<!-- algorithm detail drawer -->
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="算法详情" role="dialog" aria-modal="false">
+  <button class="icon-btn drawer-close" id="drawer-close" type="button" aria-label="关闭详情">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </button>
+  <div id="drawer-body"></div>
+</aside>
+
+<!-- artifact preview -->
+<div class="modal-backdrop" id="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <h2 id="modal-title">文件</h2>
+      <div class="modal-tools">
+        <button class="btn sm" id="modal-copy" type="button">复制</button>
+        <button class="icon-btn" id="modal-close" type="button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <pre class="modal-body" id="modal-body"></pre>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

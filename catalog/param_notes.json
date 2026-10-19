@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "note": "Hand-curated UI metadata merged with the extracted TRL fields. `group_stage_map` maps a docstring section header to one of the abstract workflow stages; `choices` overrides the auto-extracted enum values; `common_training_args` are transformers.TrainingArguments fields that TRL itself does not redeclare (each one verified against the TRL source, see `evidence`).",
+
+  "group_stage_map": {
+    "Parameters that control the model and reference model": "model",
+    "Parameters that control the model and the teacher model": "model",
+    "Parameters that control the model": "model",
+    "Parameters that control the teacher model": "model",
+    "Parameters that control the teacher": "model",
+    "Parameters that control the data preprocessing": "data",
+    "Parameters that control data preprocessing": "data",
+    "Parameters that control generation": "rollout",
+    "Parameters that control generation and the training loop": "rollout",
+    "Parameters that control on-policy generation": "rollout",
+    "Parameters that control teacher-conditioned generation": "rollout",
+    "Parameters that control the async rollout pipeline": "rollout",
+    "Parameters that control reprompting": "rollout",
+    "Parameters that control generation acceleration powered by vLLM": "env",
+    "Parameters that control the vLLM server": "env",
+    "Parameters that control the vLLM server (only used when `vllm_mode` is `\"server\"`)": "env",
+    "Parameters that control colocated vLLM execution (only used when `vllm_mode` is `\"colocate\"`)": "env",
+    "Parameters that control generation acceleration powered by transformers continuous batching": "env",
+    "Parameters that control the vLLM servers": "env",
+    "Parameters that control vLLM for student generation": "env",
+    "Parameters that control vLLM integration": "env",
+    "Parameters that control the training": "update",
+    "Parameters that control the distillation loss": "update",
+    "Parameters that control the distillation": "update",
+    "Parameters that control the ULD loss": "update",
+    "Parameters that control the SDFT loss": "update",
+    "Parameters that control the SDPO loss": "update",
+    "Parameters that control the online policy objective": "update",
+    "Parameters that control Stage 2 (on-policy regression)": "update",
+    "Parameters that control Stage 1 (offline optimal value estimation)": "estimate",
+    "Other parameters": "update",
+    "Parameters that control the logging": "output",
+    "Parameters that control logging": "output",
+    "Deprecated parameters": "deprecated"
+  },
+
+  "fallback_groups": {
+    "learning_rate": { "group": "训练超参", "stage": "update" },
+    "pad_token": { "group": "数据与分词器", "stage": "data" },
+    "eos_token": { "group": "数据与分词器", "stage": "data" },
+    "train_sampling_strategy": { "group": "训练循环", "stage": "update" },
+    "use_transformers_paged": { "group": "已弃用", "stage": "deprecated" },
+    "vllm_importance_sampling_cap": { "group": "vLLM 重要性采样", "stage": "update" }
+  },
+
+  "fallback_group_rules": [
+    { "match": "^lora_|^use_peft$|^use_rslora$|^use_dora$|^load_in_|^bnb_", "group": "LoRA 与量化", "stage": "model" },
+    { "match": "^model_name|^model_revision$|^model$|^revision$|^dtype$|^attn_implementation$", "group": "模型加载", "stage": "model" },
+    { "match": "^dataset|^datasets$|^streaming$|^test_split_size$", "group": "数据集加载", "stage": "data" },
+    { "match": "^teacher_", "group": "教师模型", "stage": "model" }
+  ],
+
+  "field_group_overrides": {
+    "ModelConfig.use_peft": { "group": "LoRA 与量化", "stage": "model" },
+    "DatasetMixtureConfig.datasets": { "group": "数据集列表", "stage": "data" }
+  },
+
+  "choices": {
+    "*.truncation_mode": ["keep_start", "keep_end"],
+    "*.vllm_mode": ["colocate", "server"],
+    "*.vllm_model_impl": ["vllm", "transformers"],
+    "*.importance_sampling_level": ["token", "sequence"],
+    "*.distillation_objective": ["iw_opd", "jsd"],
+    "*.teacher_model_kind": ["base", "live", "ema"],
+    "*.packing_strategy": ["bfd", "bfd_split", "wrapped"],
+    "GRPOConfig.scale_rewards": ["group", "batch", "none"],
+    "GRPOConfig.multi_objective_aggregation": ["sum_then_normalize", "normalize_then_sum"],
+    "GOLDConfig.uld_token_merge_strategy": ["observed", "bayesian"],
+    "SFTConfig.loss_type": ["nll", "dft", "chunked_nll"],
+    "KTOConfig.loss_type": ["kto", "apo_zero_unpaired"],
+    "CPOConfig.loss_type": ["sigmoid", "hinge", "ipo", "simpo", "alphapo"],
+    "TPOConfig.loss_type": ["sigmoid", "hinge", "ipo", "tpo-l"],
+    "OnlineDPOConfig.loss_type": ["sigmoid", "ipo"],
+    "ModelConfig.dtype": ["float32", "bfloat16", "float16"],
+    "ModelConfig.attn_implementation": ["sdpa", "eager", "kernels", "flash_attention_2"],
+    "ModelConfig.lora_task_type": ["CAUSAL_LM", "SEQ_CLS"]
+  },
+
+  "default_overrides": {
+    "DPOConfig.loss_type": ["sigmoid"],
+    "DPOConfig.loss_weights": null,
+    "SFTConfig.loss_type": "nll"
+  },
+
+  "hidden_fields": [
+    "GRPOConfig.use_transformers_paged",
+    "RLOOConfig.use_transformers_paged",
+    "DPOConfig.pad_token",
+    "KTOConfig.pad_token",
+    "RewardConfig.pad_token",
+    "SFTConfig.pad_token",
+    "ScriptArguments.ignore_bias_buffers"
+  ],
+
+  "key_field_overrides": {
+    "GRPOConfig": ["num_generations", "max_completion_length", "loss_type", "beta", "scale_rewards", "epsilon", "epsilon_high", "num_iterations", "temperature", "importance_sampling_level", "mask_truncated_completions", "multi_objective_aggregation", "use_vllm", "vllm_mode", "log_completions"],
+    "RLOOConfig": ["num_generations", "max_completion_length", "beta", "epsilon", "epsilon_high", "num_iterations", "normalize_advantages", "reward_clip_range", "use_vllm"],
+    "DPOConfig": ["beta", "loss_type", "loss_weights", "max_length", "truncation_mode", "precompute_ref_log_probs", "label_smoothing", "ld_alpha", "f_divergence_type"],
+    "KTOConfig": ["beta", "loss_type", "desirable_weight", "undesirable_weight", "train_sampling_strategy", "max_length"],
+    "SFTConfig": ["max_length", "packing", "packing_strategy", "assistant_only_loss", "dataset_text_field", "loss_type"],
+    "RewardConfig": ["center_rewards_coefficient", "max_length", "eos_token"],
+    "DistillationConfig": ["teacher_model_name_or_path", "beta", "max_completion_length", "temperature", "use_vllm"],
+    "GKDConfig": ["beta", "lmbda", "temperature", "max_new_tokens", "seq_kd"],
+    "GOLDConfig": ["use_uld_loss", "teacher_tokenizer_name_or_path", "uld_token_merge_strategy", "uld_use_hybrid_loss", "beta", "lmbda"],
+    "SDPOConfig": ["num_generations", "max_completion_length", "distillation_weight", "distillation_mode", "teacher_model_kind", "success_reward_threshold", "max_reprompt_len"],
+    "SDFTConfig": ["teacher_model_kind", "teacher_update_rate", "distillation_mode", "distillation_alpha", "distillation_topk", "generate_from_teacher"],
+    "A2POConfig": ["num_value_samples", "beta1", "beta2", "max_completion_length", "filter_all_incorrect"],
+    "AsyncGRPOConfig": ["num_generations", "max_completion_length", "token_budget", "max_inflight_tasks", "max_staleness", "weight_sync_steps", "vllm_server_base_url"],
+    "AsyncDistillationConfig": ["beta", "teacher_server_urls", "teacher_top_k", "token_budget", "max_inflight_tasks", "max_staleness"],
+    "OnlineDPOConfig": ["beta", "loss_type", "reward_model_path", "max_new_tokens", "missing_eos_penalty"],
+    "CPOConfig": ["beta", "cpo_alpha", "simpo_gamma", "loss_type", "label_smoothing", "alpha"],
+    "ORPOConfig": ["beta", "max_length", "max_completion_length"],
+    "TPOConfig": ["beta", "loss_type", "tpo_alpha", "tpo_l_gamma", "label_smoothing"],
+    "IWOPDConfig": ["distillation_objective", "iw_opd_gamma", "iw_opd_epsilon", "reverse_kl_top_1_mode", "loss_top_k", "beta"],
+    "GMPOConfig": ["epsilon", "num_generations", "max_completion_length", "beta", "loss_type"],
+    "ServerDistillationConfig": ["teacher_model_server_url", "loss_top_k", "loss_add_tail", "beta"],
+    "ModelConfig": ["model_name_or_path", "dtype", "attn_implementation", "use_peft", "lora_r", "lora_alpha", "lora_target_modules", "load_in_4bit"]
+  },
+
+  "common_training_args": [
+    { "name": "output_dir", "type": "str", "stage": "output", "group": "产物目录", "default": null, "evidence": "docs/source/grpo_trainer.md", "help": "模型与 checkpoint 的输出目录；RL 训练必填，通常与任务 id 对齐。" },
+    { "name": "run_name", "type": "str | None", "stage": "output", "group": "产物目录", "default": null, "evidence": "docs/source/rloo_trainer.md", "help": "实验名，用于日志平台（trackio/wandb/tensorboard）上的运行标识。" },
+    { "name": "report_to", "type": "str | list[str]", "stage": "output", "group": "产物目录", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_trainer.py", "help": "日志后端，如 trackio、wandb、tensorboard、none。" },
+    { "name": "seed", "type": "int", "stage": "env", "group": "可复现性", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_trainer.py", "help": "全局随机种子。" },
+    { "name": "num_train_epochs", "type": "float", "stage": "env", "group": "训练规模", "default": null, "evidence": "docs/source/distillation_trainer.md", "help": "训练轮数；RL 训练通常 1 轮左右，用 max_steps 更直观。" },
+    { "name": "max_steps", "type": "int", "stage": "env", "group": "训练规模", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_trainer.py", "help": "总优化步数；设了它 num_train_epochs 就被忽略。" },
+    { "name": "per_device_train_batch_size", "type": "int", "stage": "env", "group": "训练规模", "default": null, "evidence": "trl/experimental/a2po/a2po_trainer.py", "help": "单卡训练 batch；GRPO 系要满足 有效 batch = per_device × 进程数 × 梯度累积 能被 num_generations 整除。" },
+    { "name": "per_device_eval_batch_size", "type": "int", "stage": "env", "group": "训练规模", "default": null, "evidence": "trl/experimental/sdft/sdft_config.py", "help": "单卡评估 batch。" },
+    { "name": "gradient_accumulation_steps", "type": "int", "stage": "env", "group": "训练规模", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_trainer.py", "help": "梯度累积步数，用来把小 batch 拼成有效的组大小。" },
+    { "name": "lr_scheduler_type", "type": "str", "stage": "update", "group": "优化器", "default": null, "evidence": "docs/source/lora_without_regret.md", "help": "学习率调度器，如 linear、cosine、constant。" },
+    { "name": "warmup_steps", "type": "float", "stage": "update", "group": "优化器", "default": null, "evidence": "docs/source/lora_without_regret.md", "help": "预热步数（可为比例）。" },
+    { "name": "warmup_ratio", "type": "float", "stage": "update", "group": "优化器", "default": null, "evidence": "docs/source/paper_index.md", "help": "预热占总步数的比例。" },
+    { "name": "weight_decay", "type": "float", "stage": "update", "group": "优化器", "default": null, "evidence": "examples/grpo_sudoku/grpo_sudoku.py", "help": "权重衰减。" },
+    { "name": "max_grad_norm", "type": "float", "stage": "update", "group": "优化器", "default": null, "evidence": "docs/source/lora_without_regret.md", "help": "梯度裁剪范数，RL 训练里常用 1.0。" },
+    { "name": "optim", "type": "str", "stage": "update", "group": "优化器", "default": null, "evidence": "trl/experimental/a2po/a2po_trainer.py", "help": "优化器类型，如 adamw_torch、adamw_bnb_8bit；长补全显存紧张时用 8bit。" },
+    { "name": "fp16", "type": "bool", "stage": "env", "group": "精度", "default": false, "evidence": "trl/trainer/base_config.py", "help": "半精度训练；与 bf16 互斥（bf16 未显式设置时由 fp16 推导）。" },
+    { "name": "label_smoothing_factor", "type": "float", "stage": "update", "group": "优化器", "default": null, "evidence": "trl/trainer/sft_trainer.py", "help": "标签平滑系数。" },
+    { "name": "gradient_checkpointing_kwargs", "type": "dict | str", "stage": "env", "group": "显存", "default": null, "evidence": "trl/experimental/cpo/cpo_trainer.py", "help": "梯度检查点参数，如 {\"use_reentrant\": false}。" },
+    { "name": "dataloader_num_workers", "type": "int", "stage": "env", "group": "数据加载", "default": null, "evidence": "trl/experimental/gold/gold_trainer.py", "help": "数据加载进程数。" },
+    { "name": "dataloader_pin_memory", "type": "bool", "stage": "env", "group": "数据加载", "default": null, "evidence": "trl/experimental/gold/gold_trainer.py", "help": "锁页内存加速 H2D 拷贝。" },
+    { "name": "dataloader_drop_last", "type": "bool", "stage": "env", "group": "数据加载", "default": null, "evidence": "trl/experimental/gold/gold_trainer.py", "help": "丢弃最后一个不完整 batch。" },
+    { "name": "average_tokens_across_devices", "type": "bool", "stage": "env", "group": "数据加载", "default": null, "evidence": "trl/trainer/sft_trainer.py", "help": "跨设备平均 token 数，多卡下让损失尺度一致。" },
+    { "name": "accelerator_config", "type": "dict | str", "stage": "env", "group": "分布式", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_config.py", "help": "accelerate 配置（如 gradient_accumulation_plugin）。" },
+    { "name": "deepspeed", "type": "str", "stage": "env", "group": "分布式", "default": null, "evidence": "docs/source/clis.md", "help": "DeepSpeed 配置文件路径；TRL 自带 trl/accelerate_configs/zero{1,2,3}.yaml 可配合 accelerate 使用。" },
+    { "name": "fsdp", "type": "str | list", "stage": "env", "group": "分布式", "default": null, "evidence": "docs/source/clis.md", "help": "FSDP 分片策略；TRL 提供 fsdp1/fsdp2 accelerate 配置。" },
+    { "name": "ddp_find_unused_parameters", "type": "bool", "stage": "env", "group": "分布式", "default": null, "evidence": "trl/trainer/distillation_trainer.py", "help": "DDP 下查找未使用参数；有多个可选分支（如只训部分模块）时设为 False/True 视报错而定。" },
+    { "name": "save_strategy", "type": "str", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/experimental/async_distillation/async_distillation_trainer.py", "help": "保存策略：no / steps / epoch。" },
+    { "name": "save_steps", "type": "int", "stage": "output", "group": "保存与评估", "default": null, "evidence": "docs/source/online_dpo_trainer.md", "help": "每多少步保存一次 checkpoint。" },
+    { "name": "save_total_limit", "type": "int", "stage": "output", "group": "保存与评估", "default": null, "evidence": "docs/source/jobs_training.md", "help": "最多保留几个 checkpoint，防止磁盘被吃满。" },
+    { "name": "eval_strategy", "type": "str", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/experimental/sdft/sdft_config.py", "help": "评估策略：no / steps / epoch。" },
+    { "name": "eval_steps", "type": "int", "stage": "output", "group": "保存与评估", "default": null, "evidence": "docs/source/sdpo_trainer.md", "help": "每多少步评估一次。" },
+    { "name": "logging_strategy", "type": "str", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/trainer/base_config.py", "help": "日志策略：steps / epoch。" },
+    { "name": "push_to_hub", "type": "bool", "stage": "output", "group": "保存与评估", "default": false, "evidence": "trl/experimental/merge_model_callback.py", "help": "训练结束后推送模型到 Hub（需要 token）。" },
+    { "name": "hub_model_id", "type": "str", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/experimental/cpo/cpo_trainer.py", "help": "推送目标仓库 id。" },
+    { "name": "hub_private_repo", "type": "bool", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/trainer/grpo_trainer.py", "help": "推送的仓库设为私有。" },
+    { "name": "resume_from_checkpoint", "type": "str | bool", "stage": "output", "group": "保存与评估", "default": null, "evidence": "trl/scripts/distillation.py", "help": "从 checkpoint 续训。" }
+  ],
+
+  "dataset_examples": {
+    "grpo": ["trl-lib/DeepMath-103K"],
+    "rloo": ["trl-lib/DeepMath-103K", "trl-lib/tldr"],
+    "dpo": ["trl-lib/ultrafeedback_binarized", "Vezora/Code-Preference-Pairs", "HuggingFaceH4/rlaif-v_formatted"],
+    "kto": ["trl-lib/kto-mix-14k"],
+    "sft": ["trl-lib/Capybara", "FreedomIntelligence/medical-o1-reasoning-SFT"],
+    "reward": ["trl-lib/ultrafeedback_binarized", "lmarena-ai/arena-human-preference-55k"],
+    "distillation": ["trl-lib/ultrafeedback-prompt"],
+    "online_dpo": []
+  },
+
+  "presets": {
+    "grpo": {
+      "note": "依据 docs/source/grpo_trainer.md 的快速开始与 examples/gspo_math 的实跑命令整理的起步值；num_generations 与 batch 的整除关系已按 8 卡校验。",
+      "training": { "per_device_train_batch_size": 1, "gradient_accumulation_steps": 8, "learning_rate": 1e-06, "max_steps": 500, "save_steps": 100, "logging_steps": 5, "bf16": true, "gradient_checkpointing": true },
+      "algorithm": { "num_generations": 8, "max_completion_length": 2048, "beta": 0.0, "loss_type": "dapo", "scale_rewards": "group", "epsilon": 0.2, "temperature": 1.0, "steps_per_generation": 8, "log_completions": true, "use_vllm": true, "vllm_mode": "colocate", "vllm_gpu_memory_utilization": 0.3 }
+    },
+    "rloo": {
+      "note": "RLOO 默认 k=num_generations=2，生成成本约为 GRPO 的 1/4；TRL 默认 beta=0.05 会加载参考模型。",
+      "training": { "per_device_train_batch_size": 2, "gradient_accumulation_steps": 4, "learning_rate": 1e-06, "max_steps": 500, "bf16": true },
+      "algorithm": { "num_generations": 4, "max_completion_length": 1024, "beta": 0.05, "epsilon": 0.2, "num_iterations": 1 }
+    },
+    "sft": {
+      "note": "RL 前的冷启动配方。",
+      "training": { "per_device_train_batch_size": 2, "gradient_accumulation_steps": 8, "learning_rate": 2e-05, "num_train_epochs": 2, "bf16": true, "gradient_checkpointing": true },
+      "algorithm": { "max_length": 4096, "packing": true, "assistant_only_loss": true, "loss_type": "nll" }
+    },
+    "distillation": {
+      "note": "教师需与学生同 tokenizer；跨 tokenizer 用 GOLD。",
+      "training": { "per_device_train_batch_size": 1, "gradient_accumulation_steps": 8, "learning_rate": 1e-05, "bf16": true },
+      "algorithm": { "beta": 0.5, "max_completion_length": 1024, "temperature": 1.0 }
+    },
+    "dpo": {
+      "note": "离线偏好对齐，无需生成；precompute_ref_log_probs 省显存。",
+      "training": { "per_device_train_batch_size": 1, "gradient_accumulation_steps": 8, "learning_rate": 5e-07, "num_train_epochs": 1, "bf16": true, "gradient_checkpointing": true },
+      "algorithm": { "beta": 0.1, "loss_type": ["sigmoid"], "max_length": 2048, "precompute_ref_log_probs": true }
+    }
+  }
+}
